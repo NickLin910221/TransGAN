@@ -60,4 +60,4 @@ if __name__ == "__main__":
     for var_name in optimizer.state_dict():
         print(var_name, "\t", optimizer.state_dict()[var_name])
     
-    torch.save(model.state_dict(), "./model.pt")
+    torch.save(model.state_dict(), "./model/model.pt")
