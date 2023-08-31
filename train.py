@@ -23,9 +23,9 @@ transform = transforms.Compose(
 
 def display(model, input, epoch):
     pred = np.squeeze(model(input).detach().cpu().numpy())
-    fig = plt.figure(figsize = (4, 4))
-    for i in range(16):
-        plt.subplot(4, 4, i + 1)
+    fig = plt.figure(figsize = (10, 10))
+    for i in range(100):
+        plt.subplot(10, 10, i + 1)
         plt.imshow((pred[i] + 1) / 2)
         plt.axis("off")
     plt.savefig(f"./train/{time}/epoch_{epoch}.png")
@@ -33,7 +33,6 @@ def display(model, input, epoch):
 def loss(G_loss, D_loss):
     if G_loss[-1] < (max(G_loss) / 100) and D_loss[-1] < (max(D_loss) / 100):
         return True
-
 
 if __name__ == "__main__":
     epochs, epoch = 150, 0
@@ -43,7 +42,7 @@ if __name__ == "__main__":
     
     dataset = torchvision.datasets.MNIST("data", train = True, transform = transform, download = True)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size = batch_size, shuffle = True)
-    test_input = torch.rand(16, 100, device = device)
+    test_input = torch.rand(100, 10, device = device)
 
     gen = Generator().to(device)
     disc = Discriminator().to(device)
@@ -51,7 +50,8 @@ if __name__ == "__main__":
     g_optim = torch.optim.Adam(gen.parameters(), lr = 0.002)
     d_optim = torch.optim.Adam(disc.parameters(), lr = 0.002)
 
-    loss_function = torch.nn.BCELoss()
+    loss_function_MSE = torch.nn.MSELoss()
+    loss_function_BCE = torch.nn.BCELoss()
 
     G_loss = []
     D_loss = []
@@ -64,24 +64,29 @@ if __name__ == "__main__":
         for step, (img, _) in enumerate(dataloader):
             img = img.to(device)
             
-            noise = torch.randn(img.size(0), 100, device = device)
-
-            d_optim.zero_grad()
+            noise = torch.randn(img.size(0), 10, device = device)
+            # Discriminator Train
+            disc.zero_grad()
             real_output = disc(img)
-            d_real_loss = loss_function(real_output, torch.ones_like(real_output))
-            d_real_loss.backward()
+            d_real_loss = loss_function_BCE(real_output, torch.ones_like(real_output))
+            
 
             gen_img = gen(noise)
-            fake_output = disc(gen_img.detach())
-            d_fake_loss = loss_function(fake_output, torch.zeros_like(fake_output))
+            fake_output = disc(gen_img)
+            d_fake_loss = loss_function_BCE(fake_output, torch.zeros_like(fake_output))
+            
+            d_real_loss.backward()
             d_fake_loss.backward()
 
             d_loss = d_real_loss + d_fake_loss
             d_optim.step()
 
-            g_optim.zero_grad()
+            # Generator Train
+            gen.zero_grad()
+
+            gen_img = gen(noise)
             fake_output = disc(gen_img)
-            g_loss = loss_function(fake_output, torch.ones_like(fake_output))
+            g_loss = loss_function_BCE(fake_output, torch.ones_like(fake_output))
 
             g_loss.backward()
             g_optim.step()

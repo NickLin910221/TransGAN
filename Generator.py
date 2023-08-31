@@ -5,7 +5,7 @@ class Generator(nn.Module):
     def __init__(self) -> None:
         super(Generator, self).__init__()
         self.gen = nn.Sequential(
-            nn.Linear(100, 28 * 28),
+            nn.Linear(10, 28 * 28),
             nn.Tanh()
         )
 
