@@ -133,3 +133,6 @@ dmypy.json
 
 # Image
 .png
+
+# Train dir
+train/
