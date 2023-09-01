@@ -5,11 +5,12 @@ class Generator(nn.Module):
     def __init__(self) -> None:
         super(Generator, self).__init__()
         self.gen = nn.Sequential(
-            nn.Linear(10, 28 * 28),
+            # Input 1 * 28 * 28
+            nn.Conv2d(in_channels = 1, out_channels = 1, kernel_size = 3, padding = 1),
+            # -> 1 * 28 * 28
             nn.Tanh()
         )
 
     def forward(self, x):
         x = self.gen(x)
-        x = x.view(-1, 28, 28)
         return x

@@ -7,6 +7,7 @@ from torchvision import transforms
 import numpy as np
 import datetime
 import os
+from torch.autograd import Variable
 
 
 from torchvision.utils import save_image
@@ -42,10 +43,12 @@ if __name__ == "__main__":
     
     dataset = torchvision.datasets.MNIST("data", train = True, transform = transform, download = True)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size = batch_size, shuffle = True)
-    test_input = torch.rand(100, 10, device = device)
+    test_input = torch.rand(10, 28 * 28, device = device)
 
     gen = Generator().to(device)
-    disc = Discriminator().to(device)
+    disc = Discriminator(batch_size).to(device)
+    print(gen)
+    print(disc)
 
     g_optim = torch.optim.Adam(gen.parameters(), lr = 0.002)
     d_optim = torch.optim.Adam(disc.parameters(), lr = 0.002)
@@ -64,7 +67,7 @@ if __name__ == "__main__":
         for step, (img, _) in enumerate(dataloader):
             img = img.to(device)
             
-            noise = torch.randn(img.size(0), 10, device = device)
+            noise = torch.randn(28 * 28, 10, device = device)
             # Discriminator Train
             disc.zero_grad()
             real_output = disc(img)
@@ -103,6 +106,10 @@ if __name__ == "__main__":
             print(f"{epoch} | Generator_loss : {gen_epoch_loss}, Discriminator_loss : {disc_epoch_loss}")
             epoch += 1
             display(gen, test_input, epoch)
+
+        if epoch % 100 == 0:
+            torch.save(gen.state_dict(), f"./train/{time}/gen_{epoch}.pt")
+            torch.save(disc.state_dict(), f"./train/{time}/disc_{epoch}.pt")
 
     torch.save(gen.state_dict(), f"./model/gen.pt")
     torch.save(disc.state_dict(), f"./model/disc.pt")
