@@ -16,11 +16,9 @@ class Discriminator(nn.Module):
             # -> 1 * 3 * 3
             nn.ReLU(),
             nn.Conv2d(in_channels = 1, out_channels = 1, kernel_size = 3),
-            # -> 1 * 1 * 1
-            nn.ReLU(),
+            nn.Sigmoid()
         )
 
     def forward(self, x):
         x = self.disc(x)
-        x = nn.Sigmoid()(x)
         return x
