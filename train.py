@@ -1,5 +1,6 @@
 from Generator import Generator
 from Discriminator import Discriminator
+from Transformer import Transformer
 import matplotlib.pyplot as plt
 import torch
 import torchvision
@@ -39,6 +40,7 @@ def display(model, input, epoch):
         plt.imshow((pred[i] + 1) / 2)
         plt.axis("off")
     plt.savefig(f"./train/{time}/epoch_{epoch}.png")
+    plt.close()
 
 def loss(G_loss, D_loss):
     if G_loss[-1] < (max(G_loss) / 100) and D_loss[-1] < (max(D_loss) / 100):
@@ -49,11 +51,14 @@ def tensor2numpy(tensor):
     return np.uint8((tensor + 1) / 2 * 255)
 
 if __name__ == "__main__":
+
     epochs, epoch = 150, 0
-    batch_size = 64
+    batch_size = 1024
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
+
+    trans = Transformer(layer = 5, attention_heads = 5).to(device)
+
     dataset = torchvision.datasets.MNIST("data", train = True, transform = transform, download = True)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size = batch_size, shuffle = True)
 
@@ -77,24 +82,24 @@ if __name__ == "__main__":
             original_img = img.clone().to(device)
             for index, image in enumerate(img):
                 _image_ = image.cpu().numpy()
-                _image_ = Image.fromarray(tensor2numpy(_image_[0]))
-                _image_.save("original.png")
-                ImageDraw.Draw(_image_).line((random.randint(0, 28), random.randint(0, 28), random.randint(0, 28), random.randint(0, 28)), fill=0, width=3)
-                _image_.save("modify.png")
+                np_img = tensor2numpy(_image_[0])
+                _image_ = Image.fromarray(np_img)
+                # for x in range(3):
+                ImageDraw.Draw(_image_).line((random.randint(0, 28), random.randint(0, 28), random.randint(0, 28), random.randint(0, 28)), fill=int(np_img.min()), width=3)
                 img[index] = transform1(_image_)
 
             if epoch == 0 and step == 0:
                 test_input = img.clone().to(device)
 
             noise_img = img.to(device)
-
+            trans(noise_img)
             # Discriminator Train
             disc.zero_grad()
             
             real_output = disc(original_img)
             d_real_loss = loss_function_BCE(real_output, torch.ones_like(real_output))
             
-            gen_img = gen(noise_img)
+            gen_img = trans(noise_img)
             fake_output = disc(gen_img)
             d_fake_loss = loss_function_BCE(fake_output, torch.zeros_like(fake_output))
 
@@ -103,9 +108,9 @@ if __name__ == "__main__":
             d_optim.step()
 
             # Generator Train
-            gen.zero_grad()
+            trans.zero_grad()
 
-            gen_img = gen(noise_img)
+            gen_img = trans(noise_img)
             fake_output = disc(gen_img)
             g_loss = loss_function_BCE(fake_output, torch.ones_like(fake_output))
 
@@ -116,18 +121,35 @@ if __name__ == "__main__":
                 disc_epoch_loss += d_loss
                 gen_epoch_loss += g_loss
 
+        if epoch % 25 == 0:
+            display(trans, test_input, epoch)
+
+        if epoch % 100 == 0:
+            torch.save(trans.state_dict(), f"./train/{time}/gen_{epoch}.pt")
+            torch.save(disc.state_dict(), f"./train/{time}/disc_{epoch}.pt")
+        
+        if len(D_loss) == len(G_loss):
+            plt.plot([i + 1 for i in range(len(G_loss))], G_loss, color=(255/255, 0/255, 0/255), label = 'Generator')
+            plt.plot([i + 1 for i in range(len(D_loss))], D_loss, color=(0/255, 0/255, 255/255), label = 'Discriminator')
+            plt.xlabel('Epoch', {'fontsize': 10, 'color':'black'})
+            plt.ylabel('Loss', {'fontsize': 10, 'color':'black'})
+            plt.legend(loc = 1)
+            plt.savefig(f"./train/{time}/loss.png")
+            plt.close()
+
         with torch.no_grad():
             disc_epoch_loss /= batch_cnt
             gen_epoch_loss /= batch_cnt
-            D_loss.append(disc_epoch_loss)
-            G_loss.append(gen_epoch_loss)
+            D_loss.append(disc_epoch_loss.item())
+            G_loss.append(gen_epoch_loss.item())
+
+            if min(D_loss) == disc_epoch_loss.item():
+                torch.save(disc.state_dict(), f"./train/{time}/best_disc.pt")
+            if min(G_loss) == gen_epoch_loss.item():
+                torch.save(gen.state_dict(), f"./train/{time}/best_gen.pt")
+
             print(f"{epoch} | Generator_loss : {gen_epoch_loss}, Discriminator_loss : {disc_epoch_loss}")
             epoch += 1
-            display(gen, test_input, epoch)
-
-        if epoch % 100 == 0:
-            torch.save(gen.state_dict(), f"./train/{time}/gen_{epoch}.pt")
-            torch.save(disc.state_dict(), f"./train/{time}/disc_{epoch}.pt")
 
     torch.save(gen.state_dict(), f"./model/gen.pt")
     torch.save(disc.state_dict(), f"./model/disc.pt")
