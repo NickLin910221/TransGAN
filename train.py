@@ -17,6 +17,8 @@ from torchvision.utils import save_image
 time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 os.mkdir(f"./train/{time}")
 
+torch.autograd.set_detect_anomaly(True)
+
 transform = transforms.Compose(
     [
         transforms.ToTensor(),
@@ -57,15 +59,14 @@ if __name__ == "__main__":
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    trans = Transformer(layer = 5, attention_heads = 5).to(device)
-
     dataset = torchvision.datasets.MNIST("data", train = True, transform = transform, download = True)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size = batch_size, shuffle = True)
 
+    trans = Transformer(layer = 5, attention_heads = 5, device = device).to(device)
     gen = Generator().to(device)
     disc = Discriminator(batch_size).to(device)
 
-    g_optim = torch.optim.Adam(gen.parameters(), lr = 0.002)
+    g_optim = torch.optim.Adam(trans.parameters(), lr = 0.002)
     d_optim = torch.optim.Adam(disc.parameters(), lr = 0.002)
 
     loss_function_BCE = torch.nn.BCELoss()
@@ -92,7 +93,7 @@ if __name__ == "__main__":
                 test_input = img.clone().to(device)
 
             noise_img = img.to(device)
-            trans(noise_img)
+
             # Discriminator Train
             disc.zero_grad()
             
