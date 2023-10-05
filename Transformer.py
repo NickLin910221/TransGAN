@@ -11,17 +11,22 @@ class Transformer(nn.Module):
 
         self.device = device
 
-        self.query = nn.Parameter(torch.randn(layer, attention_heads, size[0], size[1]))
-        self.key = nn.Parameter(torch.randn(layer, attention_heads, size[0], size[1]))
-        self.value = nn.Parameter(torch.randn(layer, attention_heads, size[0], size[1]))
+        assert (size[0] % attention_heads == 0 and size[1] % attention_heads == 0), "attention_heads can't slice the image."
+
+        self.query = nn.Parameter(torch.randn(layer, size[0] / attention_heads, size[1] / attention_heads, attention_heads, attention_heads))
+        self.key = nn.Parameter(torch.randn(layer, size[0] / attention_heads, size[1] / attention_heads, attention_heads, attention_heads))
+        self.value = nn.Parameter(torch.randn(layer, size[0] / attention_heads, size[1] / attention_heads, attention_heads, attention_heads))
 
         self.dropout = [nn.Dropout(dropout) for l in range(layer)]
 
     def forward(self, x):
         for l in range(self.layer):
-            for h in range(self.attention_heads):
-                x += torch.matmul(x, self.attention(self.query[l][h], self.key[l][h], self.value[l][h]))
-            x += self.dropout[l](x)
+            for r in range(self.attention_heads):
+                for c in range(self.attention_heads):
+                    heads = []
+                    heads.append(torch.matmul(x, self.attention(self.query[l][r][c], self.key[l][r][c], self.value[l][r][c])))
+                    heads = torch.cat(heads, 1)
+            x += self.dropout[l](heads)
         return x
 
     def attention(self, q, k, v):
