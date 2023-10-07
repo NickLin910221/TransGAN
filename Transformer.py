@@ -26,23 +26,21 @@ class Transformer(nn.Module):
     def forward(self, x):
         num = x.shape[0]
         channel = x.shape[1]
-
         for l in range(self.layer):
             heads = []
             for r in range(self.attention_heads):
                 for c in range(self.attention_heads):
                     a = torch.matmul(x[:,:,self.r * r:self.r * (r + 1),self.c * c:self.c * (c + 1)], self.attention(self.query[l][r][c], self.key[l][r][c], self.value[l][r][c]))
                     heads.append(a)
-            # heads = torch.cat(heads, 1)
-            out = torch.Tensor(num, channel, self.attention_heads ** 2, self.r, self.c)
-            torch.cat(heads, out = out)
-
-            # heads = heads.view(num, channel)
-            print(heads.shape)
-            # x += self.dropout[l](heads)
-        # return x
+            for r in range(self.attention_heads):
+                for c in range(1, self.attention_heads):
+                    heads[r * self.attention_heads] = torch.cat((heads[r * self.attention_heads], heads[r * self.attention_heads + c]), dim = 2)
+                if r > 0:
+                    heads[0] = torch.cat((heads[0], heads[r * self.attention_heads]), dim = 3)
+        return heads[0]
 
     def attention(self, q, k, v):
-        score = torch.matmul(torch.matmul(q, k.permute(0, 1)), v)
-        score = F.softmax(score, dim=-1)
+        score = torch.matmul(q, k.permute(0, 1))
+        score = F.softmax(score, dim = -1)
+        score = torch.matmul(score, v)
         return score
