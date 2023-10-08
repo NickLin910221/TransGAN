@@ -34,12 +34,20 @@ transform1 = transforms.Compose(
     ]
 )
 
-def display(model, input, epoch):
-    pred = np.squeeze(model(input).detach().cpu().numpy())
+def display(model, x, epoch):
+    pred = np.squeeze(model(x).detach().cpu().numpy())
+    x = x.detach().cpu().numpy().reshape(x.shape[0], x.shape[2], x.shape[3])
     fig = plt.figure(figsize = (8, 8))
-    for i in range(64):
-        plt.subplot(8, 8, i + 1)
-        plt.imshow((pred[i] + 1) / 2)
+    for i in range(32):
+        plt.subplot(8, 8, i * 2 + 1)
+        pred[i] = pred[i] - np.min(pred[i])
+        pred[i] /= np.max(pred[i])
+        pred[i][pred[i] < 0.75]= 0
+        plt.imshow(pred[i])
+        print(pred[i], np.min(pred[i]))
+        plt.subplot(8, 8, i * 2 + 2)
+        plt.imshow((x[i] + 1) / 2)
+        print((x[i] + 1) / 2)
         plt.axis("off")
     plt.savefig(f"./train/{time}/epoch_{epoch}.png")
     plt.close()
