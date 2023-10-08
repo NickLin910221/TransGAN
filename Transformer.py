@@ -40,8 +40,8 @@ class Transformer(nn.Module):
         self.key = nn.Parameter(torch.randn(layer, attention_heads, attention_heads, self.r, self.c))
         self.value = nn.Parameter(torch.randn(layer, attention_heads, attention_heads, self.r, self.c))
 
-        self.MLP = [MLP(size[0] * size[1]) for l in range(layer)]
-        self.norm = nn.LayerNorm
+        self.MLP = [MLP(size[0] * size[1]).to(device) for l in range(layer)]
+        self.norm = nn.LayerNorm([size[0], size[1]])
 
     def forward(self, x):
         num = x.shape[0]
@@ -58,8 +58,8 @@ class Transformer(nn.Module):
                 if r > 0:
                     heads[0] = torch.cat((heads[0], heads[r * self.attention_heads]), dim = 3)
             x2 = x + heads[0]
-            x3 = self.norm(x2)
-            x4 = self.MLP[l](x)
+            x3 = self.norm(x2).view(num, channel, -1)
+            x4 = self.MLP[l](x3).view(num, channel, self.size[0], self.size[1])
             x = x4 + x2
         return x
 

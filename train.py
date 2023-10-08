@@ -62,7 +62,7 @@ if __name__ == "__main__":
     dataset = torchvision.datasets.MNIST("data", train = True, transform = transform, download = True)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size = batch_size, shuffle = True)
 
-    trans = Transformer(layer = 5, attention_heads = 4, device = device).to(device)
+    trans = Transformer(layer = 1, attention_heads = 4, device = device).to(device)
     gen = Generator().to(device)
     disc = Discriminator(batch_size).to(device)
 
