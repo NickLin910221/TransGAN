@@ -42,6 +42,7 @@ class Transformer(nn.Module):
 
         self.MLP = [MLP(size[0] * size[1]).to(device) for l in range(layer)]
         self.norm = nn.LayerNorm([size[0], size[1]])
+        self.Tanh = nn.Tanh()
 
     def forward(self, x):
         num = x.shape[0]
@@ -61,6 +62,7 @@ class Transformer(nn.Module):
             x3 = self.norm(x2).view(num, channel, -1)
             x4 = self.MLP[l](x3).view(num, channel, self.size[0], self.size[1])
             x = x4 + x2
+        x = self.Tanh(x)
         return x
 
     def attention(self, q, k, v):

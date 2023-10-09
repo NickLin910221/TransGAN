@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import torch
 import torchvision
 from torchvision import transforms
+from torchvision.utils import save_image
 import numpy as np
 import datetime
 import os
@@ -40,14 +41,11 @@ def display(model, x, epoch):
     fig = plt.figure(figsize = (8, 8))
     for i in range(32):
         plt.subplot(8, 8, i * 2 + 1)
-        pred[i] = pred[i] - np.min(pred[i])
-        pred[i] /= np.max(pred[i])
-        pred[i][pred[i] < 0.75]= 0
+        pred[i] = (pred[i] + 1) / 2
         plt.imshow(pred[i])
-        print(pred[i], np.min(pred[i]))
         plt.subplot(8, 8, i * 2 + 2)
-        plt.imshow((x[i] + 1) / 2)
-        print((x[i] + 1) / 2)
+        x[i] = (x[i] + 1) / 2
+        plt.imshow(x[i])
         plt.axis("off")
     plt.savefig(f"./train/{time}/epoch_{epoch}.png")
     plt.close()
@@ -101,10 +99,8 @@ if __name__ == "__main__":
                 test_input = img.clone().to(device)
 
             noise_img = img.to(device)
-
             # Discriminator Train
             disc.zero_grad()
-            
             real_output = disc(original_img)
             d_real_loss = loss_function_BCE(real_output, torch.ones_like(real_output))
             
