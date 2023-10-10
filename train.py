@@ -13,8 +13,6 @@ from torch.autograd import Variable
 from PIL import Image, ImageDraw
 import random
 
-from torchvision.utils import save_image
-
 time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 os.mkdir(f"./train/{time}")
 
@@ -36,19 +34,8 @@ transform1 = transforms.Compose(
 )
 
 def display(model, x, epoch):
-    pred = np.squeeze(model(x).detach().cpu().numpy())
-    x = x.detach().cpu().numpy().reshape(x.shape[0], x.shape[2], x.shape[3])
-    fig = plt.figure(figsize = (8, 8))
-    for i in range(32):
-        plt.subplot(8, 8, i * 2 + 1)
-        pred[i] = (pred[i] + 1) / 2
-        plt.imshow(pred[i])
-        plt.subplot(8, 8, i * 2 + 2)
-        x[i] = (x[i] + 1) / 2
-        plt.imshow(x[i])
-        plt.axis("off")
-    plt.savefig(f"./train/{time}/epoch_{epoch}.png")
-    plt.close()
+    save_image(model(x)[:64], f"./train/{time}/inference_epoch_{epoch}.png")
+    save_image(x[:64], f"./train/{time}/original_epoch_{epoch}.png")
 
 def loss(G_loss, D_loss):
     if G_loss[-1] < (max(G_loss) / 100) and D_loss[-1] < (max(D_loss) / 100):
@@ -93,12 +80,12 @@ if __name__ == "__main__":
                 _image_ = Image.fromarray(np_img)
                 # for x in range(3):
                 ImageDraw.Draw(_image_).line((random.randint(0, 28), random.randint(0, 28), random.randint(0, 28), random.randint(0, 28)), fill=int(np_img.min()), width=3)
-                img[index] = transform1(_image_)
+                image = transform1(_image_)
 
             if epoch == 0 and step == 0:
                 test_input = img.clone().to(device)
 
-            noise_img = img.to(device)
+            noise_img = img.clone().to(device)
             # Discriminator Train
             disc.zero_grad()
             real_output = disc(original_img)
