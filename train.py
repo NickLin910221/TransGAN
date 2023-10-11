@@ -55,7 +55,7 @@ if __name__ == "__main__":
     dataset = torchvision.datasets.MNIST("data", train = True, transform = transform, download = True)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size = batch_size, shuffle = True)
 
-    trans = Transformer(layer = 1, attention_heads = 4, device = device).to(device)
+    trans = Transformer(layer = 3, attention_heads = 4, device = device).to(device)
     gen = Generator().to(device)
     disc = Discriminator(batch_size).to(device)
 
@@ -80,7 +80,7 @@ if __name__ == "__main__":
                 _image_ = Image.fromarray(np_img)
                 # for x in range(3):
                 ImageDraw.Draw(_image_).line((random.randint(0, 28), random.randint(0, 28), random.randint(0, 28), random.randint(0, 28)), fill=int(np_img.min()), width=3)
-                image = transform1(_image_)
+                img[index] = transform1(_image_)
 
             if epoch == 0 and step == 0:
                 test_input = img.clone().to(device)
@@ -138,12 +138,12 @@ if __name__ == "__main__":
             if min(D_loss) == disc_epoch_loss.item():
                 torch.save(disc.state_dict(), f"./train/{time}/best_disc.pt")
             if min(G_loss) == gen_epoch_loss.item():
-                torch.save(gen.state_dict(), f"./train/{time}/best_gen.pt")
+                torch.save(trans.state_dict(), f"./train/{time}/best_gen.pt")
 
             print(f"{epoch} | Generator_loss : {gen_epoch_loss}, Discriminator_loss : {disc_epoch_loss}")
             epoch += 1
 
     torch.save(gen.state_dict(), f"./model/gen.pt")
-    torch.save(disc.state_dict(), f"./model/disc.pt")
+    torch.save(trans.state_dict(), f"./model/disc.pt")
     torch.save(gen.state_dict(), f"./train/{time}/gen.pt")
-    torch.save(disc.state_dict(), f"./train/{time}/disc.pt")
+    torch.save(trans.state_dict(), f"./train/{time}/disc.pt")
