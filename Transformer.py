@@ -60,8 +60,8 @@ class Transformer(nn.Module):
                     heads[0] = torch.cat((heads[0], heads[r * self.attention_heads]), dim = 3)
             x2 = x + heads[0]
             x3 = self.norm(x2).view(num, channel, -1)
-            x4 = self.MLP[l](x3).view(num, channel, self.size[0], self.size[1])
-            x = x4 + x2
+            # x4 = self.MLP[l](x3).view(num, channel, self.size[0], self.size[1])
+            # x = x4 + x2
         x = self.Tanh(x)
         return x
 
