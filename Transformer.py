@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 
 class MLP(nn.Module):
     def __init__(self, in_features, hidden_features = None, out_features = None, activation_func = nn.LeakyReLU, dropout = 0) -> None:
@@ -21,10 +22,40 @@ class MLP(nn.Module):
         x = self.dropout(x)
         return x
 
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model, size = (4, 4), max_len=5000):
+        super(PositionalEncoding, self).__init__()
+        self.size = size
+        max_len = self.size[0] * self.size[1]
+        self.pe = torch.zeros(max_len, d_model)
+        self._pe_ = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) *
+                             -(math.log(10000.0) / d_model))
+
+        self.pe[:, 0::2] = torch.sin(position * div_term)
+        self.pe[:, 1::2] = torch.cos(position * div_term)
+
+    def forward(self, x):
+        pe = self.pe.expand(-1, int(x.shape[2] / self.size[0]))
+        pe = pe.reshape(-1, x.shape[2]).unsqueeze(1)
+        print(pe)
+        pe = pe.expand(-1, int(x.shape[3] / self.size[1]), -1)
+        print(pe)
+        for r in range(self.size[0]):
+            for c in range(self.size[1]):
+                self._pe_[][]
+                # print(x[:, :, int(x.shape[2] / self.size[0] * r):int(x.shape[2] / self.size[0] * (r + 1)), int(x.shape[3] / self.size[1] * c):int(x.shape[3] / self.size[1] * (c + 1))])
+                # x[:, :, int(x.shape[2] / self.size[0] * r):int(x.shape[2] / self.size[0] * (r + 1)), int(x.shape[3] / self.size[1] * c):int(x.shape[3] / self.size[1] * (c + 1))] + self.pe[self.size[0] * r + c]
+                # print(x[:, :, int(x.shape[2] / self.size[0] * r):int(x.shape[2] / self.size[0] * (r + 1)), int(x.shape[3] / self.size[1] * c):int(x.shape[3] / self.size[1] * (c + 1))])
+        self.pe
+
 class Transformer(nn.Module):
 
-    def __init__(self, device, layer = 3, attention_heads = 1, size = (28, 28), dropout = 0) -> None:
+    def __init__(self, device, layer = 3, attention_heads = 1, size = (28, 28), dropout = 0.1) -> None:
         super(Transformer, self).__init__()
+        self.PE = PositionalEncoding(1, size = (4, 4), max_len = attention_heads ** 2).to(device)
+
         self.attention_heads = attention_heads
         self.layer = layer
         self.size = size
@@ -47,6 +78,7 @@ class Transformer(nn.Module):
     def forward(self, x):
         num = x.shape[0]
         channel = x.shape[1]
+        self.PE(x)
         for l in range(self.layer):
             heads = []
             x1 = self.norm(x)
