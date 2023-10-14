@@ -22,5 +22,4 @@ class Discriminator(nn.Module):
 
     def forward(self, x):
         x = self.disc(x)
-        x = nn.Sigmoid()(x)
         return x
