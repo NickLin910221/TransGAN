@@ -23,10 +23,8 @@ class MLP(nn.Module):
         return x
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, device, size = (4, 4), max_len=5000):
+    def __init__(self, d_model, device, max_len=5000):
         super(PositionalEncoding, self).__init__()
-        self.size = size
-        max_len = self.size[0] * self.size[1]
         pe = torch.zeros(max_len, d_model)
         
         position = torch.arange(0, max_len).unsqueeze(1)
@@ -46,11 +44,10 @@ class Transformer(nn.Module):
 
     def __init__(self, device, layer = 3, attention_heads = 1, size = (28, 28), dropout = 0.1) -> None:
         super(Transformer, self).__init__()
-        self.PE = PositionalEncoding(1, device = device, size = (4, 4), max_len = attention_heads ** 2).to(device)
+        self.PE = PositionalEncoding(1, device = device, max_len = attention_heads ** 2).to(device)
 
         self.attention_heads = attention_heads
         self.layer = layer
-        self.size = size
 
         self.device = device
 
@@ -59,10 +56,7 @@ class Transformer(nn.Module):
         self.r = int(size[0] / attention_heads)
         self.c = int(size[1] / attention_heads)
 
-        self.query = nn.Parameter(torch.randn(layer, attention_heads, attention_heads, self.r, self.c))
-        self.key = nn.Parameter(torch.randn(layer, attention_heads, attention_heads, self.r, self.c))
-        self.value = nn.Parameter(torch.randn(layer, attention_heads, attention_heads, self.r, self.c))
-
+        self.qkv = nn.Linear(size[0] * size[1], size[0] * size[1] * 3)
         self.MLP = [MLP(size[0] * size[1]).to(device) for l in range(layer)]
         self.norm = nn.LayerNorm([size[0], size[1]])
         self.Tanh = nn.Tanh()
@@ -70,13 +64,16 @@ class Transformer(nn.Module):
     def forward(self, x):
         num = x.shape[0]
         channel = x.shape[1]
+        qkv = self.qkv(x.view(x.shape[0], x.shape[1], -1)).view(x.shape[0], x.shape[1], self.attention_heads ** 2, 3, self.r, self.c)
+        query, key, value = qkv.unbind(3)
+
         x = self.PE(x)
         for l in range(self.layer):
             heads = []
             x1 = self.norm(x)
             for r in range(self.attention_heads):
                 for c in range(self.attention_heads):
-                    heads.append(torch.matmul(x1[:,:,self.r * r:self.r * (r + 1),self.c * c:self.c * (c + 1)], self.attention(self.query[l][r][c], self.key[l][r][c], self.value[l][r][c])))
+                    heads.append(torch.matmul(x1[:,:,self.r * r:self.r * (r + 1),self.c * c:self.c * (c + 1)], self.attention(query[l][0][r * self.attention_heads + c], key[l][0][r * self.attention_heads + c], value[l][0][r * self.attention_heads + c])))
             for r in range(self.attention_heads):
                 for c in range(1, self.attention_heads):
                     heads[r * self.attention_heads] = torch.cat((heads[r * self.attention_heads], heads[r * self.attention_heads + c]), dim = 2)
@@ -84,8 +81,8 @@ class Transformer(nn.Module):
                     heads[0] = torch.cat((heads[0], heads[r * self.attention_heads]), dim = 3)
             x2 = x + heads[0]
             x3 = self.norm(x2).view(num, channel, -1)
-            # x4 = self.MLP[l](x3).view(num, channel, self.size[0], self.size[1])
-            # x = x4 + x2
+            x4 = self.MLP[l](x3).view(num, channel, x.shape[2], x.shape[3])
+            x = x2 + x4
         x = self.Tanh(x)
         return x
 
