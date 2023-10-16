@@ -23,8 +23,12 @@ class MLP(nn.Module):
         return x
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, device, max_len=5000):
+    def __init__(self, d_model, row = 28, col = 28):
         super(PositionalEncoding, self).__init__()
+
+        max_len = row * col
+        self.row = row
+        self.col = col
         pe = torch.zeros(max_len, d_model)
         
         position = torch.arange(0, max_len).unsqueeze(1)
@@ -34,22 +38,20 @@ class PositionalEncoding(nn.Module):
         pe[:, 0::2] = nn.Parameter(torch.sin(position * div_term))
         pe[:, 1::2] = nn.Parameter(torch.cos(position * div_term))
 
-        self.register_buffer('pe', pe.unsqueeze(0))
+        self.register_buffer('pe', pe.view(row, col))
 
     @torch.no_grad()
     def forward(self, x):
-        return x + self.pe[:, :x.size(1)]
+        return x + self.pe
 
 class Transformer(nn.Module):
 
-    def __init__(self, device, layer = 3, attention_heads = 1, size = (28, 28), dropout = 0.1) -> None:
+    def __init__(self, layer = 3, attention_heads = 1, size = (28, 28), dropout = 0.1) -> None:
         super(Transformer, self).__init__()
-        self.PE = PositionalEncoding(1, device = device, max_len = attention_heads ** 2).to(device)
+        self.PE = PositionalEncoding(1)
 
         self.attention_heads = attention_heads
         self.layer = layer
-
-        self.device = device
 
         assert (size[0] % attention_heads == 0 and size[1] % attention_heads == 0), "attention_heads can't slice the image."
 
@@ -57,13 +59,12 @@ class Transformer(nn.Module):
         self.c = int(size[1] / attention_heads)
 
         self.qkv = nn.Linear(size[0] * size[1], size[0] * size[1] * 3)
-        self.MLP = [MLP(size[0] * size[1]).to(device) for l in range(layer)]
+        self.MLP = nn.ModuleList([MLP(size[0] * size[1]) for l in range(layer)])
+
         self.norm = nn.LayerNorm([size[0], size[1]])
         self.Tanh = nn.Tanh()
 
     def forward(self, x):
-        num = x.shape[0]
-        channel = x.shape[1]
         qkv = self.qkv(x.view(x.shape[0], x.shape[1], -1)).view(x.shape[0], x.shape[1], self.attention_heads ** 2, 3, self.r, self.c)
         query, key, value = qkv.unbind(3)
 
@@ -80,9 +81,9 @@ class Transformer(nn.Module):
                 if r > 0:
                     heads[0] = torch.cat((heads[0], heads[r * self.attention_heads]), dim = 3)
             x2 = x + heads[0]
-            x3 = self.norm(x2).view(num, channel, -1)
-            x4 = self.MLP[l](x3).view(num, channel, x.shape[2], x.shape[3])
-            x = x2 + x4
+            # x3 = self.norm(x2).view(x.shape[0], x.shape[1], -1)
+            # x4 = self.MLP[l](x3).view(x.shape[0], x.shape[1], x.shape[2], x.shape[3])
+            x = x + x2
         x = self.Tanh(x)
         return x
 

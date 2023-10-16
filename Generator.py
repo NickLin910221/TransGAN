@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
+from Transformer import Transformer
 
 class Generator(nn.Module):
     def __init__(self) -> None:
@@ -10,7 +11,9 @@ class Generator(nn.Module):
             # -> 1 * 28 * 28
             nn.Tanh()
         )
+        self.transformer = Transformer(layer = 3, attention_heads = 4)
 
     def forward(self, x):
         x = self.gen(x)
+        x = self.transformer(x)
         return x
