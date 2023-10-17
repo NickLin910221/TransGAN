@@ -61,6 +61,7 @@ class Transformer(nn.Module):
         self.qkv = nn.Linear(size[0] * size[1], size[0] * size[1] * 3)
         self.MLP = nn.ModuleList([MLP(size[0] * size[1]) for l in range(layer)])
 
+        self.softmax = nn.Softmax()
         self.norm = nn.LayerNorm([size[0], size[1]])
         self.Tanh = nn.Tanh()
 
@@ -74,7 +75,7 @@ class Transformer(nn.Module):
             x1 = self.norm(x)
             for r in range(self.attention_heads):
                 for c in range(self.attention_heads):
-                    heads.append(torch.matmul(x1[:,:,self.r * r:self.r * (r + 1),self.c * c:self.c * (c + 1)], self.attention(query[l][0][r * self.attention_heads + c], key[l][0][r * self.attention_heads + c], value[l][0][r * self.attention_heads + c])))
+                    heads.append(self.softmax(torch.matmul(x1[:,:,self.r * r:self.r * (r + 1),self.c * c:self.c * (c + 1)], self.attention(query[l][0][r * self.attention_heads + c], key[l][0][r * self.attention_heads + c], value[l][0][r * self.attention_heads + c]))))
             for r in range(self.attention_heads):
                 for c in range(1, self.attention_heads):
                     heads[r * self.attention_heads] = torch.cat((heads[r * self.attention_heads], heads[r * self.attention_heads + c]), dim = 2)
