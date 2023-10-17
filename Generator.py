@@ -11,7 +11,7 @@ class Generator(nn.Module):
             # -> 1 * 28 * 28
             nn.Tanh()
         )
-        self.transformer = Transformer(layer = 3, attention_heads = 4)
+        self.transformer = Transformer(layer = 1, attention_heads = 4)
 
     def forward(self, x):
         x = self.gen(x)
