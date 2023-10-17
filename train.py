@@ -118,7 +118,7 @@ if __name__ == "__main__":
             display(trans, test_input, epoch)
 
         if epoch % 100 == 0:
-            torch.save(gen.state_dict(), f"./train/{time}/gen_{epoch}.pt")
+            torch.save(trans.state_dict(), f"./train/{time}/gen_{epoch}.pt")
             torch.save(disc.state_dict(), f"./train/{time}/disc_{epoch}.pt")
         
         if len(D_loss) == len(G_loss):
