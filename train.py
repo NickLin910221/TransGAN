@@ -59,7 +59,7 @@ if __name__ == "__main__":
     gen = Generator().to(device)
     disc = Discriminator(batch_size).to(device)
 
-    g_optim = torch.optim.Adam(trans.parameters(), lr = 0.002)
+    g_optim = torch.optim.Adam(gen.parameters(), lr = 0.002)
     d_optim = torch.optim.Adam(disc.parameters(), lr = 0.002)
 
     loss_function_BCE = torch.nn.BCELoss()
@@ -91,7 +91,7 @@ if __name__ == "__main__":
             real_output = disc(original_img)
             d_real_loss = loss_function_BCE(real_output, torch.ones_like(real_output))
             
-            gen_img = trans(noise_img)
+            gen_img = gen(noise_img)
             fake_output = disc(gen_img)
             d_fake_loss = loss_function_BCE(fake_output, torch.zeros_like(fake_output))
 
@@ -100,9 +100,9 @@ if __name__ == "__main__":
             d_optim.step()
 
             # Generator Train
-            trans.zero_grad()
+            gen.zero_grad()
 
-            gen_img = trans(noise_img)
+            gen_img = gen(noise_img)
             fake_output = disc(gen_img)
 
             g_loss = loss_function_BCE(fake_output, torch.ones_like(fake_output))
@@ -115,10 +115,10 @@ if __name__ == "__main__":
                 gen_epoch_loss += g_loss
 
         if epoch % 25 == 0:
-            display(trans, test_input, epoch)
+            display(gen, test_input, epoch)
 
         if epoch % 100 == 0:
-            torch.save(trans.state_dict(), f"./train/{time}/gen_{epoch}.pt")
+            torch.save(gen.state_dict(), f"./train/{time}/gen_{epoch}.pt")
             torch.save(disc.state_dict(), f"./train/{time}/disc_{epoch}.pt")
         
         if len(D_loss) == len(G_loss):
@@ -144,7 +144,7 @@ if __name__ == "__main__":
             print(f"{epoch} | Generator_loss : {gen_epoch_loss}, Discriminator_loss : {disc_epoch_loss}")
             epoch += 1
 
-    torch.save(trans.state_dict(), f"./model/gen.pt")
+    torch.save(gen.state_dict(), f"./model/gen.pt")
     torch.save(disc.state_dict(), f"./model/disc.pt")
-    torch.save(trans.state_dict(), f"./train/{time}/gen.pt")
+    torch.save(gen.state_dict(), f"./train/{time}/gen.pt")
     torch.save(disc.state_dict(), f"./train/{time}/disc.pt")
