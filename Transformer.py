@@ -90,6 +90,6 @@ class Transformer(nn.Module):
 
     def attention(self, q, k, v):
         score = torch.matmul(q, k.permute(0, 1))
-        score = F.softmax(score, dim = -1)
+        score = self.softmax(score)
         score = torch.matmul(score, v)
         return score
