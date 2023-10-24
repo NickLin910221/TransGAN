@@ -55,9 +55,12 @@ if __name__ == "__main__":
     dataset = torchvision.datasets.MNIST("data", train = True, transform = transform, download = True)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size = batch_size, shuffle = True)
 
-    trans = Transformer(layer = 1, attention_heads = 4).to(device)
-    gen = Generator().to(device)
-    disc = Discriminator(batch_size).to(device)
+    transformer = Transformer(layer = 1, attention_heads = 4).to(device)
+    generator = Generator().to(device)
+    discriminator = Discriminator(batch_size).to(device)
+
+    gen = transformer
+    disc = discriminator
 
     g_optim = torch.optim.Adam(gen.parameters(), lr = 0.002)
     d_optim = torch.optim.Adam(disc.parameters(), lr = 0.002)
@@ -139,7 +142,7 @@ if __name__ == "__main__":
             if min(D_loss) == disc_epoch_loss.item():
                 torch.save(disc.state_dict(), f"./train/{time}/best_disc.pt")
             if min(G_loss) == gen_epoch_loss.item():
-                torch.save(trans.state_dict(), f"./train/{time}/best_gen.pt")
+                torch.save(gen.state_dict(), f"./train/{time}/best_gen.pt")
 
             print(f"{epoch} | Generator_loss : {gen_epoch_loss}, Discriminator_loss : {disc_epoch_loss}")
             epoch += 1

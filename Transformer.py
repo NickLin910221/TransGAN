@@ -75,21 +75,21 @@ class Transformer(nn.Module):
             x1 = self.norm(x)
             for r in range(self.attention_heads):
                 for c in range(self.attention_heads):
-                    heads.append(self.softmax(torch.matmul(x1[:,:,self.r * r:self.r * (r + 1),self.c * c:self.c * (c + 1)], self.attention(query[l][0][r * self.attention_heads + c], key[l][0][r * self.attention_heads + c], value[l][0][r * self.attention_heads + c]))))
+                    heads.append(self.softmax(torch.matmul(x1[:,:,self.r * r:self.r * (r + 1),self.c * c:self.c * (c + 1)], self.attention(query[l][0][r * self.attention_heads + c], key[l][0][r * self.attention_heads + c], value[l][0][r * self.attention_heads + c], self.attention_heads ** 2))))
             for r in range(self.attention_heads):
                 for c in range(1, self.attention_heads):
                     heads[r * self.attention_heads] = torch.cat((heads[r * self.attention_heads], heads[r * self.attention_heads + c]), dim = 2)
                 if r > 0:
                     heads[0] = torch.cat((heads[0], heads[r * self.attention_heads]), dim = 3)
             x2 = x + heads[0]
-            # x3 = self.norm(x2).view(x.shape[0], x.shape[1], -1)
-            # x4 = self.MLP[l](x3).view(x.shape[0], x.shape[1], x.shape[2], x.shape[3])
-            x = x + x2
+            x3 = self.norm(x2).view(x.shape[0], x.shape[1], -1)
+            x4 = self.MLP[l](x3).view(x.shape[0], x.shape[1], x.shape[2], x.shape[3])
+            x = x2 + x4
         x = self.Tanh(x)
         return x
 
-    def attention(self, q, k, v):
-        score = torch.matmul(q, k.permute(0, 1))
+    def attention(self, q, k, v, d):
+        score = torch.matmul(q, k.permute(0, 1)) * (d ** -0.5)
         score = self.softmax(score)
         score = torch.matmul(score, v)
         return score
