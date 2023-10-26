@@ -35,7 +35,8 @@ transform1 = transforms.Compose(
 
 def display(model, x, epoch):
     save_image(model(x)[:64], f"./train/{time}/inference_epoch_{epoch}.png")
-    save_image(x[:64], f"./train/{time}/original_epoch_{epoch}.png")
+    if epoch == 0:
+        save_image(x[:64], f"./train/{time}/original.png")
 
 def loss(G_loss, D_loss):
     if G_loss[-1] < (max(G_loss) / 100) and D_loss[-1] < (max(D_loss) / 100):
