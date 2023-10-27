@@ -49,12 +49,11 @@ class PositionalEncoding(nn.Module):
 
 class Transformer(nn.Module):
 
-    def __init__(self, layer = 3, attention_heads = 1, size = (28, 28), dropout = 0.1) -> None:
+    def __init__(self, attention_heads = 1, size = (28, 28), dropout = 0.1) -> None:
         super(Transformer, self).__init__()
         self.PE = PositionalEncoding(1)
 
         self.attention_heads = attention_heads
-        self.layer = layer
 
         assert (size[0] % attention_heads == 0 and size[1] % attention_heads == 0), "attention_heads can't slice the image."
 
@@ -62,49 +61,42 @@ class Transformer(nn.Module):
         self.c = int(size[1] / attention_heads)
 
         self.qkv = nn.Linear(size[0] * size[1], size[0] * size[1] * 3)
-        self.MLP = nn.ModuleList([MLP(size[0] * size[1]) for l in range(layer)])
+        self.MLP = MLP(size[0] * size[1])
 
         self.softmax = nn.Softmax(dim = -1)
         self.norm = nn.LayerNorm([size[0], size[1]])
-        self.norm1 = nn.LayerNorm([size[0], size[1]])
-        self.norm2 = nn.LayerNorm([size[0], size[1]])
-        self.norm3 = nn.LayerNorm([size[0], size[1]])
         self.Tanh = nn.Tanh()
 
     def forward(self, x):
-        
         x_withpe = self.PE(x)
 
         qkv = self.qkv(x_withpe.view(x_withpe.shape[0], x_withpe.shape[1], -1)).view(x_withpe.shape[0], x_withpe.shape[1], self.attention_heads ** 2, 3, self.r, self.c)
         query, key, value = qkv.unbind(3)
 
-        for l in range(self.layer):
-            heads = []
-            x1 = self.norm1(x_withpe)
-            for r in range(self.attention_heads):
-                for c in range(self.attention_heads):
-                    attention = self.attention(query[l][0][r * self.attention_heads + c], key[l][0][r * self.attention_heads + c], value[l][0][r * self.attention_heads + c], self.attention_heads ** 2)
-                    output = torch.matmul(x1[:,:,self.r * r:self.r * (r + 1),self.c * c:self.c * (c + 1)], attention)
-                    heads.append(output)
-            for r in range(self.attention_heads):
-                for c in range(1, self.attention_heads):
-                    heads[r * self.attention_heads] = torch.cat((heads[r * self.attention_heads], heads[r * self.attention_heads + c]), dim = 2)
-                if r > 0:
-                    heads[0] = torch.cat((heads[0], heads[r * self.attention_heads]), dim = 3)
-            # save_image(x[:64], f"./dfbdn.png")
-            x = x + self.norm(heads[0])
-            # save_image(x2[:64], f"./jyt.png")
-            # x = self.norm2(x2)
+        
+        heads = []
+        x1 = self.norm(x_withpe)
+        for r in range(self.attention_heads):
+            for c in range(self.attention_heads):
+                attention = self.attention(query[:, :, r * self.attention_heads + c], key[:, :, r * self.attention_heads + c], value[:, :, r * self.attention_heads + c], self.attention_heads ** 2)
+                output = torch.matmul(x1[:,:,self.r * r:self.r * (r + 1),self.c * c:self.c * (c + 1)], attention)
+                heads.append(output)
+        for r in range(self.attention_heads):
+            for c in range(1, self.attention_heads):
+                heads[r * self.attention_heads] = torch.cat((heads[r * self.attention_heads], heads[r * self.attention_heads + c]), dim = 2)
+            if r > 0:
+                heads[0] = torch.cat((heads[0], heads[r * self.attention_heads]), dim = 3)
+        x = x + self.norm(heads[0])
+        # x2 = x.view(x.shape[0], x.shape[1], -1)
+
+        # x = self.MLP[l](x2).view(x.shape[0], x.shape[1], x.shape[2], x.shape[3])
+        # save_image(x[:64], f"./fgfgn.png")
             
-            # x3 = x3.view(x.shape[0], x.shape[1], -1)
-            # x4 = self.MLP[l](x3).view(x.shape[0], x.shape[1], x.shape[2], x.shape[3])
-            # save_image(x4[:64], f"./fgfgn.png")
-            # x = x2 + x4
         x = self.Tanh(x)
         return x
 
     def attention(self, q, k, v, d):
-        score = torch.matmul(q, k.permute(0, 1)) * (d ** -0.5)
+        score = torch.matmul(q, k.permute(0, 1, 3, 2)) * (d ** -0.5)
         score = self.softmax(score)
         score = torch.matmul(score, v)
         return score

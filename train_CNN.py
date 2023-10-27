@@ -13,7 +13,7 @@ from torch.autograd import Variable
 from PIL import Image, ImageDraw
 import random
 
-time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S") + "_CNN"
 os.mkdir(f"./train/{time}")
 
 torch.autograd.set_detect_anomaly(True)
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     generator = Generator().to(device)
     discriminator = Discriminator(batch_size).to(device)
 
-    gen = transformer
+    gen = generator
     disc = discriminator
 
     g_optim = torch.optim.Adam(gen.parameters(), lr = 0.002)
@@ -113,9 +113,6 @@ if __name__ == "__main__":
             fake_output = disc(gen_img)
 
             g_loss = loss_function_MAE(gen_img, original_img) + loss_function_BCE(fake_output, torch.ones_like(fake_output))
-            save_image(noise_img[:64], f"./sdc.png")
-            save_image(gen_img[:64], f"./dsvsd.png")
-            save_image(original_img[:64], f"./dsdsvdvdverh.png")
             # g_loss = loss_function_BCE(fake_output, torch.ones_like(fake_output))
             # print(g_loss)
 
