@@ -12,9 +12,11 @@ import os
 from torch.autograd import Variable
 from PIL import Image, ImageDraw
 import random
+from loguru import logger
 
 time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 os.mkdir(f"./train/{time}")
+logger.add(f"./train/{time}/loss.log", level="TRACE", rotation="100 MB")
 
 torch.autograd.set_detect_anomaly(True)
 
@@ -69,7 +71,7 @@ if __name__ == "__main__":
 
     loss_function_BCE = torch.nn.BCELoss()
     loss_function_MSE = torch.nn.MSELoss()
-    loss_function_MAE = torch.nn.L1Loss()
+    loss_function_L1 = torch.nn.L1Loss()
 
     G_loss = []
     D_loss = []
@@ -96,14 +98,15 @@ if __name__ == "__main__":
             # Discriminator Train
             disc.zero_grad()
             real_output = disc(original_img)
-            d_real_loss = loss_function_BCE(real_output, torch.ones_like(real_output))
+            d_real_loss = loss_function_MSE(real_output, torch.ones_like(real_output))
+            d_real_loss.backward()
             
             gen_img = gen(noise_img)
             fake_output = disc(gen_img)
-            d_fake_loss = loss_function_BCE(fake_output, torch.zeros_like(fake_output))
+            d_fake_loss = loss_function_MSE(fake_output, torch.zeros_like(fake_output))
+            d_fake_loss.backward()
 
             d_loss = d_real_loss + d_fake_loss
-            d_loss.backward()
             d_optim.step()
 
             # Generator Train
@@ -112,13 +115,7 @@ if __name__ == "__main__":
             gen_img = gen(noise_img)
             fake_output = disc(gen_img)
 
-            g_loss = loss_function_MAE(gen_img, original_img) + loss_function_BCE(fake_output, torch.ones_like(fake_output))
-            save_image(noise_img[:64], f"./sdc.png")
-            save_image(gen_img[:64], f"./dsvsd.png")
-            save_image(original_img[:64], f"./dsdsvdvdverh.png")
-            # g_loss = loss_function_BCE(fake_output, torch.ones_like(fake_output))
-            # print(g_loss)
-
+            g_loss = loss_function_MSE(gen_img, original_img) + loss_function_MSE(fake_output, torch.ones_like(fake_output))
             g_loss.backward()
             g_optim.step()
 
@@ -151,7 +148,7 @@ if __name__ == "__main__":
                 plt.savefig(f"./train/{time}/best_loss.png")
                 plt.close()
 
-            print(f"{epoch} | Generator_loss : {gen_epoch_loss}, Discriminator_loss : {disc_epoch_loss}")
+            logger.info(f"{epoch} | Generator_loss : {gen_epoch_loss}, Discriminator_loss : {disc_epoch_loss}")
             epoch += 1
 
         if len(D_loss) == len(G_loss):
