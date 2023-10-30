@@ -66,6 +66,9 @@ if __name__ == "__main__":
     gen = transformer
     disc = discriminator
 
+    total = sum([param.nelement() for param in gen.parameters()])
+    print("Number of parameter: %.2fM" % (total/1e6))
+
     g_optim = torch.optim.Adam(gen.parameters(), lr = 0.002)
     d_optim = torch.optim.Adam(disc.parameters(), lr = 0.002)
 
@@ -92,6 +95,7 @@ if __name__ == "__main__":
                     img[index] = transform1(_image_)
 
             if epoch == 0 and step == 0:
+                gt = original_img.clone().to(device)
                 test_input = img.clone().to(device)
 
             noise_img = img.clone().to(device)
@@ -124,7 +128,7 @@ if __name__ == "__main__":
                 gen_epoch_loss += g_loss
 
         if epoch % 25 == 0:
-            display(gen, test_input, original_img, epoch)
+            display(gen, test_input, gt, epoch)
 
         if epoch % 100 == 0:
             torch.save(gen.state_dict(), f"./train/{time}/gen_{epoch}.pt")

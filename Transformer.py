@@ -91,6 +91,7 @@ class Transformer(nn.Module):
         save_image(x[:64], f"./middle.png")
         x2 = x.view(x.shape[0], x.shape[1], -1)
         x3 = self.MLP(x2).view(x.shape[0], x.shape[1], x.shape[2], x.shape[3])
+        save_image(x3[:64], f"./MLP.png")
         x = x + x3
         x = self.Tanh(x)
         save_image(x[:64], f"./output.png")

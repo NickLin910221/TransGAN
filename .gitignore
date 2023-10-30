@@ -132,7 +132,9 @@ dmypy.json
 .pt
 
 # Image
-.png
+*.png
 
 # Train dir
 train/
+model/
+SSIM/
