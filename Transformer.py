@@ -41,7 +41,7 @@ class PositionalEncoding(nn.Module):
         pe[:, 0::2] = nn.Parameter(torch.sin(position * div_term))
         pe[:, 1::2] = nn.Parameter(torch.cos(position * div_term))
 
-        self.register_buffer('pe', pe.view(row, col))
+        # self.register_buffer('pe', pe.view(row, col))
 
     @torch.no_grad()
     def forward(self, x):

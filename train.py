@@ -66,7 +66,11 @@ if __name__ == "__main__":
     gen = transformer
     disc = discriminator
 
-    total = sum([param.nelement() for param in gen.parameters()])
+    print(gen)
+
+    for param in gen.parameters():
+        print(param.numel())
+    total = sum([param.numel() for param in gen.parameters()])
     print("Number of parameter: %.2fM" % (total/1e6))
 
     g_optim = torch.optim.Adam(gen.parameters(), lr = 0.002)
