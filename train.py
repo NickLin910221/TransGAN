@@ -1,6 +1,6 @@
-from Generator import Generator
+from Generator_with_CNN import Generator
 from Discriminator import Discriminator
-from Transformer import Transformer
+from Generator_with_Transformer import Transformer
 import matplotlib.pyplot as plt
 import torch
 import torchvision

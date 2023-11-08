@@ -1,4 +1,4 @@
-from Transformer import Transformer
+from Generator_with_Transformer import Transformer
 import matplotlib.pyplot as plt
 import torch
 import torchvision
