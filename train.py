@@ -66,8 +66,6 @@ if __name__ == "__main__":
     gen = transformer
     disc = discriminator
 
-    print(gen)
-
     for param in gen.parameters():
         print(param.numel())
     total = sum([param.numel() for param in gen.parameters()])
