@@ -7,7 +7,6 @@
     <br/>
     <br/>
     <a href="https://dearestbee.tplinkdns.com/demo">View Demo</a>
-    .
   </p>
 </p>
 
@@ -86,5 +85,3 @@ Distributed under the MIT License. See [LICENSE](https://github.com/NickLin91022
 ## Acknowledgements
 
 * [陳宗禧](https://home.nutn.edu.tw/chents/index-c.html)
-* [Othneil Drew](https://github.com/othneildrew/Best-README-Template)
-* [ImgShields](https://shields.io/)
