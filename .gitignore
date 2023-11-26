@@ -131,9 +131,6 @@ dmypy.json
 # Pytorch weight
 .pt
 
-# Image
-*.png
-
 # Train dir
 train/
 SSIM/
