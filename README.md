@@ -76,7 +76,7 @@ python inference.py
 
 ## License
 
-Distributed under the MIT License. See [LICENSE](https://github.com/NickLin910221/TransGAN/blob/main/LICENSE.md) for more information.
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 ## Authors
 
